@@ -50,6 +50,8 @@ int
 	FILE * fp;
 	FILE * qfp;
 	FILE * parafp;
+	FILE * cfp;
+	FILE * afp;
 
 	double bestEnergy;
 	int FeatNum;
@@ -59,6 +61,8 @@ int
 	char * SampleFileName;
 	char * OutputFileName;
 	char * paraFileName;
+	char * centerFileName;
+	char * assignFileName;
 	int round;
 
 	
@@ -75,10 +79,24 @@ int
 
 
 	paraFileName = malloc(10240);
-
 	sprintf(paraFileName,"%s.para",OutputFileName);
-
 	parafp = fopen(paraFileName,"w");
+	
+
+
+        centerFileName = malloc(10240);
+        sprintf(centerFileName,"%s.center",OutputFileName);
+        cfp = fopen(centerFileName,"w");
+
+
+
+        assignFileName = malloc(10240);
+        sprintf(assignFileName,"%s.assignment",OutputFileName);
+        afp = fopen(assignFileName,"w");
+
+
+
+
 	if (argc>=5)
 	{
 		MaxIterNum = atoi(argv[4]);
@@ -116,6 +134,7 @@ int
 			fscanf(fp,"%f",rp);
 			rp++;
 		}
+
 	}
 
 
@@ -140,11 +159,10 @@ int
 	VlKMeansAlgorithm algorithm = VlKMeansLloyd;
 	//VlKMeansAlgorithm algorithm = VlKMeansElkan ;
 	VlVectorComparisonType distance = VlDistanceL2;
-	VlKMeans * kmeans = vl_kmeans_new(VL_TYPE_DOUBLE, distance);
-
+	VlKMeans * kmeans = vl_kmeans_new(VL_TYPE_FLOAT, distance);
 	vl_rand_init(&rand);
 	vl_rand_seed(&rand, 1000);
-
+	vl_set_num_threads(8);
 	vl_kmeans_set_verbosity(kmeans, 1);
 	vl_kmeans_set_max_num_iterations(kmeans, MaxIterNum);
 	vl_kmeans_set_max_num_comparisons(kmeans, maxComp);
@@ -234,25 +252,36 @@ int
 
 	//printf("====================Clustering Finished!!!===================\n ====================Final Energy: %lf=================== \n",vl_kmeans_get_energy(kmeans));
 
-	SerializeVLKmeans(kmeans,OutputFileName);
+	//SerializeVLKmeans(kmeans,OutputFileName);
 
-	fprintf(parafp,"%lf",vl_kmeans_get_energy(kmeans));
-	fclose(parafp);
+	//fprintf(parafp,"%lf",vl_kmeans_get_energy(kmeans));
+	//fclose(parafp);
 
-	centers = (float *) vl_kmeans_get_centers (kmeans);
+	//centers = (float *) vl_kmeans_get_centers (kmeans);
 
 
+	rp = (float *) kmeans->centers;
+	for (i=0;i<ClusterNum;i++)
+	{
+		for (j = 0;j<FeatDim;j++)
+		{
+			fprintf(cfp,"%f ",*rp);
+			rp++;
+		}
+		fprintf(cfp,"\n");
+	}
 
-	rp = data;
+	vl_uint32 * assignments = vl_malloc(sizeof(vl_uint32) * FeatNum) ;
+	float * distances = vl_malloc(sizeof(float) * FeatNum) ;
+	vl_kmeans_quantize(kmeans, assignments, distances, data, FeatNum) ;
+
+
 	for (i=0;i<FeatNum;i++)
-        {
-		qdata = (float *) malloc(sizeof(float)*162);	
-                for (j = 0;j<FeatDim;j++)
-                {
-                        fscanf(fp,"%f",rp);
-                        rp++;
-                }
-        }
+	{
+		fprintf(afp, "%d ",*(assignments+i));
+	}
+	fclose(cfp);
+	fclose(afp);
 
 	if (argc==7)
 	{

@@ -55,7 +55,16 @@ int main(int argc VL_UNUSED, char ** argv VL_UNUSED)
   //gettimeofday(&t1, NULL);
 
   vl_kmeans_cluster(kmeans,data,dimension,numData,numCenters);
-
+        double * rp = (double *) kmeans->centers;
+        for (int i=0;i<numData;i++)
+        {
+                for (int j = 0;j<dimension;j++)
+                {
+                        printf("%lf ",*rp);
+                        rp++;
+                }
+                printf("\n");
+        }
   //gettimeofday(&t2, NULL);
 
   //VL_PRINT("elapsed vlfeat: %f s\n",(double)(t2.tv_sec - t1.tv_sec) + ((double)(t2.tv_usec - t1.tv_usec))/1000000.);
